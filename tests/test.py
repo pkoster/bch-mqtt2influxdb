@@ -32,6 +32,12 @@ points:
       value: $.payload.message.temperature
     tags:
       id: $.topic[1]
+
+  - measurement: stringvalue
+    topic: mqtt2influxdb/test/test_payload_string
+    fields:
+      value: $.payload
+
 '''
 
 
@@ -107,6 +113,15 @@ class TestTransform(unittest.TestCase):
         self.assertEqual(point['fields']['value'], 12.9)
         self.assertDictEqual(point['tags'], {'id': 'test'})
         self.assertTrue('time' in point)
+
+    def test_payload_string(self):
+        self.mqtt_pub('mqtt2influxdb/test/test_payload_string', 'teststring')
+        self.assertEqual(len(self.influxdb.data), 1, msg='Expect 1 call write_points')
+        self.assertEqual(len(self.influxdb.data[0]['points']), 1, msg='Expect 1 points')
+        self.assertEqual(self.influxdb.data[0]['database'], 'node')
+        point = self.influxdb.data[0]['points'][0]
+        self.assertEqual(point['measurement'], 'stringvalue')
+        self.assertEqual(point['fields']['value'], 'teststring')
 
 
 if __name__ == '__main__':
